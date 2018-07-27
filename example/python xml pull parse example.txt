@@ -1,0 +1,14 @@
+from xml.etree.ElementTree import XMLParser
+import xml.etree.ElementTree as ET
+
+tree = ET.parse('movies.xml')
+root = tree.getroot()
+
+exampleXml=ET.tostring(root)
+parser = ET.XMLPullParser(['start', 'end'])
+parser.feed(exampleXml)
+#print(parser.read_events())
+for event, elem in parser.read_events():
+    print(event)
+    print(elem.tag, 'text=', elem.text)
+

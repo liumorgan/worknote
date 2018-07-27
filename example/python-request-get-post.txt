@@ -1,0 +1,46 @@
+
+import urllib.request  
+  
+url = 'http://cha.xxx.cn/?stype=kd&q=123456'
+req = urllib.request.Request(url)  
+html = urllib.request.urlopen(req).read()
+print(html.decode("utf8"))
+
+
+import urllib.request  
+import urllib.parse  
+  
+url = "http://www.xxx.com/food/search"
+postdata = urllib.parse.urlencode({  
+    "keyword":"樱桃"  
+}).encode("utf-8")
+req = urllib.request.Request(url,postdata)  
+html = urllib.request.urlopen(req).read()
+print(html.decode("utf8"))
+
+
+
+import requests
+ 
+url = "http://fanyi.xxx.com/langdetect" 
+d = {"query":"樱桃"}
+r = requests.post(url, data=d)
+print(r.text)   
+
+
+
+import urllib.parse  
+import urllib.request  
+
+url="http://www.google.cn/webhp" 
+
+values={"rls":"ig"}  
+data=urllib.parse.urlencode(values)  
+
+theurl=url+"?"+data 
+#创建请求对象  
+req=urllib.request.Request(theurl) 
+#获得服务器返回的数据  
+response=urllib.request.urlopen(req) 
+#处理数据  
+page=response.read()  

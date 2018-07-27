@@ -1,0 +1,36 @@
+import configparser
+config = configparser.ConfigParser()
+config['DEFAULT'] = {'ServerAliveInterval': '45',
+                     'Compression': 'yes',
+                     'CompressionLevel': '9'}
+config['bitbucket.org'] = {}
+config['bitbucket.org']['User'] = 'hg'
+config['topsecret.server.com'] = {}
+topsecret = config['topsecret.server.com']
+topsecret['Port'] = '50022'     # mutates the parser
+topsecret['ForwardX11'] = 'no'  # same here
+config['DEFAULT']['ForwardX11'] = 'yes'
+with open('example.ini', 'w') as configfile:
+	config.write(configfile)
+	
+	
+import configparser
+config = configparser.ConfigParser()
+config.read('example.ini')
+config.sections()
+config['bitbucket.org']['User']
+config['DEFAULT']['Compression']
+topsecret = config['topsecret.server.com']
+topsecret['ForwardX11']
+topsecret['Port']
+for key in config['bitbucket.org']:  
+	print(key)	
+	
+	
+import configparser
+config = configparser.ConfigParser({'bar': 'Life', 'baz': 'hard'})
+config.read('example.ini')
+
+print(config.get('bitbucket.org', 'User'))
+#config.remove_option('Section1', 'baz')
+print(config.get('Section1', 'foo',fallback="default value"))

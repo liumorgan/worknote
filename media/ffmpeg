@@ -1,0 +1,239 @@
+ffmpeg -re -i "D:\webworkspace\live\mediaServer\cloud.mkv" -vcodec libx264 -vprofile baseline -acodec aac  -ar 44100 -strict -2 -ac 1 -f flv -s 1280x720 -q 10 rtmp://10.110.13.101:1935/myapp/test1
+
+https://ffmpeg.zeranoe.com/builds/
+
+rtsp://admin:admin@192.168.1.102:554/11
+
+ffplay带声音
+只要设置环境一个变量SDL_AUDIODRIVER=directsound或者winmm即可，那么就可以播放了。原因不清楚，可能跟sdl库有关吧
+set SDL_AUDIODRIVER=winmm
+ffplay  myVideo.mp4
+
+ ffmpeg.exe  -x 650 -y 550 -rtsp_flags prefer_tcp -f rtsp rtsp://admin:admin@192.168.1.102:554/11
+
+ ffplay server mode
+> ffplay.exe -rtsp_flags listen rtsp://0.0.0.0:14000/test 
+
+ffmpeg -i rtsp://admin:admin@192.168.1.104:554/11 -c copy -f flv rtmp://10.110.13.101:1935/myapp/test1
+
+只能推送文件到rtmp，而不能到rtsp，特别是live555
+ffmpeg -i d:\workspace\cloud.mkv  -ar 44100 -ab 48k -c:v libx264 -vprofile baseline -f flv rtmp://10.110.13.101:1935/myapp/test1
+
+D:\webworkspace\live\proxyServer\live555ProxyServer.exe rtsp://admin:admin@192.168.1.104:554/11
+
+播放rtsp视频流
+ffplay -max_delay 500000 -rtsp_transport udp rtsp://admin:admin@192.168.1.104:554/11
+
+udp 发送摄像头数据
+ffmpeg -f vfwcap -i 0 -vcodec libx264 encoded.h264 -f h264 udp://127.0.0.1:6666
+udp播放
+ffplay -f h264 udp://233.233.233.223:6666
+
+使用ffmpeg将mp4文件中的h264码流转为raw h264文件格式或ts文件格式
+ffmpeg -i h264.mp4 -c:v copy -bsf:v h264_mp4toannexb -an out.h264
+ffmpeg -i INPUT.mp4 -codec copy -bsf:v h264_mp4toannexb OUTPUT.ts
+
+录屏和录音并推流命令行如下，未测试
+ffmpeg -f dshow -i audio="麦克风 (Realtek High Definition Au" -f dshow -i audio="virtual-audio-capturer" -filter_complex amix=inputs=2:duration=first:dropout_transition=2 -f gdigrab -i desktop  -vcodec libx264 -r 60.97 -b:v 1500K -codec:a aac -ac 2 -ar 44100  -pix_fmt yuv420p -tune zerolatency -preset ultrafast -f flv "rtmp://localhost/live/livestream"
+
+ ffmpeg -f alsa -ac 2 -i pulse -f x11grab -video_size 1920x1080 -i :0.0 -vcodec libx264 -acodec ac3 test3.mp4
+
+ ffmpeg dash 切片
+ ffmpeg -re -i 263551174.mp4 -c:v copy -acodec copy -f dash -window_size 4 -extra_window_size 5 index.mpd
+ 
+ffmpeg 比较好的网站
+https://www.cnblogs.com/lidabo/category/518110.html 
+ 
+windows 录屏直播
+下面这句应该可以将屏幕录屏发布到rtmp服务器，但测试vlc打不开
+ ffmpeg -t 300 -f gdigrab -s 640x480 -r 25 -i desktop -vcodec libx264 -f flv rtmp://10.110.13.101:1935/myapp/test1
+ ffmpeg -t 300 -f gdigrab -s 640x480 -r 25 -i desktop -vcodec libx264 -preset:v ultrafast  -f flv rtmp://10.110.13.101:1935/myapp/test1
+ 
+ ffplay rtmp://10.110.13.101:1935/myapp/test1
+
+ mp4转mkv
+  ffmpeg -i sun.mp4 -acodec copy -vcodec copy sun.mkv
+  
+ mkv转mp4
+?? 如果得到音视频编码为h264/aac则执行
+      ffmpeg -i input.mkv -acodec copy -vcodec copy out.mp4
+????? 否则执行
+      ffmpeg -i input.mkv -acodec libfaac -vcodec libx264 out.mp4 
+ 
+利用ffmpeg将MP4文件切成ts和m3u8
+1、将MP4转成m3u8
+ffmpeg -i test.mp4 -codec copy -bsf h264_mp4toannexb test.ts
+
+2、将ts转成m3u8
+网上很多垃圾文章推荐segmenter工具，但用的时候，3.5G的ts文件丢了一半的数据，于是想到了ffmpeg转。
+在国外网站找到命令，一句话搞定，没报半句错：
+ffmpeg -i 12生肖.ts -c copy -map 0 -f segment -segment_list playlist.m3u8 -segment_time 10 output%03d.ts
+
+顺便共享给各位国内的同仁，免得深受其苦。毕竟，大家都说HLS代表future，rtsp已经是过去式了。
+ 
+格式工厂 视频裁剪 合并 处理 转换
+FormatFactory_4.4.0.0_qqpc_setup.exe
+
+mp4到h264码流
+ffmpeg -i first.data -vcodec libx264 -preset ultrafast -b:v 2000k hello.h264
+
+打开设备并转换为rtp码流
+命令1：ffplay z.sdp
+命令2：ffmpeg -f video4linux2 -s 320x300 -r 30 -i /dev/video0 -vcodec libx264 -f rtp rtp://127.0.0.1:5060 > x.sdp
+
+录制屏幕并发布到rtp
+ffmpeg -t 30 -f x11grab -s 640x480 -r 25 -i :0.0+65+24 -vcodec libx264 -f rtp rtp://127.0.0.1:5060 > x.sdp
+
+ffmpeg命令行批量转换视频
+for %a in ("*.mp4") do ffmpeg -i "%a"-threads 2 -vcodec libx264 -preset slow -crf 20 -y "newfiles\%~na.mp4"
+批处理文件中：
+for %%a in ("*.mp4") do ffmpeg -i "%%a"-threads 2 -vcodec libx264 -preset slow -crf 20 -y "newfiles\%%~na.mp4"
+需要多加个％号。
+将当前目录下的mp4批量压缩，并保存至当前目录下的newfiles文件夹（必须先建好），沿用原来文件名。
+
+转换命令：FFmpeg -i IN -map 0 -r 25 -threads 4 -y Out
+
+视频转gif
+ffmpeg -ss 25 -t 10 -i D:\Media\bear.wmv -f gif D:\a.gif
+ffmpeg -ss 25 -t 10 -i E:\test\文件同步演示.wmv  -f gif -r 1 D:\b.gif
+ffmpeg.exe -y -i %~1 -r 16 -vf scale=iw*1.0:ih*1.0 %~dp1%~n1.gif
+
+FFMPEG发布RTSP流
+视频上传
+ffmpeg -i a.mp4 -vcodec libx264 -f rtsp rtsp://127.0.0.1:5050/ok
+视频接收
+ffmpeg -rtsp_flags listen -f rtsp -i rtsp://127.0.0.1:5050/ok b.mp4
+
+ffmpeg转换mp4到flv的命令
+ffmpeg -i source.mp4 -c:v libx264 -ar 22050 -crf 28 destinationfile.flv
+
+mvn to mp4
+FFMPEG  -i  uploadfile/video/test.wmv -c:v libx264 -strict -2 uploadfile/mp4/test.mp4
+
+mkv to mp4
+ffmpeg.exe  -i example.mkv  -acodec copy -vcodec copy example.mp4
+
+Windows录取屏幕的命令： 
+ffmpeg -f gdigrab -i desktop luping.mpg
+windows录制摄像头到文件
+ffmpeg -f vfwcap -i 0 camera.mpg
+视频和音频，经过测试发现，不能正确保存到mp4格式
+ffmpeg -f vfwcap -i 0 -vcodec libx264  -acodec ac3 test3.mpg
+需要录制一段时间才行，有延迟
+ffmpeg -thread_queue_size 96 -threads 4 -f vfwcap -i 0 -vcodec libx264  -acodec ac3 test3.mpg
+ffmpeg -f dshow -i video="Integrated Camera" -vcodec libx264  -preset:v ultrafast e:\\001.mpg
+ffplay 直接播放摄像头数据
+ffplay -f vfwcap -i 0
+
+笔记本摄像头推送和播放
+
+ffmpeg -f dshow -i video="Integrated Camera" -vcodec libx264  -preset:v ultrafast  -f flv rtmp://10.110.13.101:1935/myapp/test1
+ffplay rtmp://10.110.13.101:1935/myapp/test1
+
+录制桌面+摄像头
+将摄像头拍摄到的画面叠加在录制到的桌面画面的右下角
+ffmpeg -thread_queue_size 96 -f x11grab -video_size 1920x1080 -i :0.0 -f video4linux2 -video_size 400x300  -i /dev/video0  -filter_complex '[0:v][1:v]overlay=x=main_w-overlay_w-10:y=main_h-overlay_h-10[out]' -map '[out]'  test5.mp4
+
+
+播放原始视频yuv数据, 以1280*720的xxx.yuv为例
+$ ffplay -f rawvideo -video_size 1280x720 xxx.yuv
+
+播放16kHz 单声道 16bit的xxx.pcm的PCM文件为例
+$ ffplay -ar 16000 -channels 1 -f s16le -i xxx.pcm
+
+
+录制桌面+摄像头+麦克风
+ffmpeg -thread_queue_size 128 -f x11grab -video_size 1920x1080 -framerate 30 -i :0.0 -f video4linux2 -video_size 400x300 -framerate 30 -i /dev/video0 -f alsa -ac 2  -i pulse -filter_complex '[0:v][1:v]overlay=x=main_w-overlay_w-10:y=main_h-overlay_h-10[out]' -map '[out]' -map 2:a  -vcodec libx264 -acodec ac3 test6.mp4
+
+
+剪切视频的命令： 
+ffmpeg -i luping.mpg -y -ss 00:00:10 -t 00:00:12 -acodec copy -vcodec copy out.mpg 
+-ss 00:00:10代表剪切的起点是luping.mpg这个视频的第10s； 
+-t 00:00:12代表剪切的持续时间为12s;
+
+将视频转化为GIF的命令： 
+ffmpeg -ss 14 -t 20 -i luping.mp4 -f gif a.gif 
+-ss 14 -t 20 代表从第14s开始持续20s
+
+ffmpeg -f gdigrab -framerate 30 -offset_x 0 -offset_y 0 -video_size 1600x900 -i desktop out.mpg 
+- gdigrab:表明我们是通过gdi抓屏的方式； 
+- -framerate 30：表示我录制的帧率为30； 
+- -offset_x ：左上偏移量X； 
+- -offset_y ：左上偏移量Y； 
+- -video_size：需要录制的宽度和高度，这是我是整个屏幕； 
+- -i：输入路径和名称以及格式mpg； 
+-desktop：告诉ffmpeg我们录的是屏幕，而不是一个窗口(可以录制一个窗口，不过得用窗口的ID)。
+
+说明：帧率是和格式相关的，比如我用mpg格式30帧就很清楚，如果用mp4则需要60帧。
+
+打印 DirectShow 支持的设备列表（true 可用1替换）
+ffmpeg -list_devices true -f dshow -i dummy
+
+视频录制
+ffmpeg -f dshow -i video="Logitech HD Webcam C310" -vcodec libx264 e:\\001.mkv
+
+ffmpeg -f dshow -i video="Logitech HD Webcam C310" -r 5 -vcodec libx264 -preset:v ultrafast -tune:v zerolatency e:\\MyDesktop.mkv 
+录一段视频，按 q 键停止.
+
+//1.截取视频某一秒图片
+ffmpeg -ss 00:02:06 -i 3.flv -f image2 -y test1.jpg
+//2.实时抓取图片
+ffmpeg -f dshow -rtbufsize 200M -i video="Logitech HD Webcam C310" -r 1 -f image2 image%03d.jpeg
+
+音频视频联合录制
+ffmpeg -f dshow -i video="Logitech HD Webcam C310":audio="麦克风 (HD Webcam C310)" -s 640x360 -b:v 1000k -b:a 128k e:\\output.mkv
+
+音视频实时采集输出
+ffmpeg -f dshow -rtbufsize 200M -i video="Logitech HD Webcam C310":audio="麦克风 (HD Webcam C310)" -pix_fmt yuv420p -ar 48000 -vcodec libx264 -crf 23 -preset veryslow -x264opts b-adapt=2:bframes=0:aq-strength=1:psy-rd=0.8,0 -vsync vfr -acodec aac -bsf:a aac_adtstoasc -f flv e:\\002.flv
+音视频和图片实时采集输出
+ffmpeg -f dshow -rtbufsize 200M -i video="Logitech HD Webcam C310":audio="麦克风 (HD Webcam C310)" -pix_fmt yuv420p -ar 48000 -vcodec libx264 -crf 23 -preset veryslow -x264opts b-adapt=2:bframes=0:aq-strength=1:psy-rd=0.8,0 -vsync vfr -acodec aac -bsf:a aac_adtstoasc -f flv 3.flv -r 1 -f image2 image%03d.jpeg
+
+音视频合成
+ffmpeg -i a.wav  -i a.avi out.avi 
+
+视频剪切
+ffmpeg -i test.mp4 -ss 10 -t 15 -codec copy cut.mp4
+//参数说明：
+-i : source 
+-ss: start time 
+-t : duration
+
+视频裁剪
+/* crop：裁剪矩形尺寸，scale：缩放尺寸*/
+ffmpeg -i input.mp4 -vf crop=w:h:x:y,scale=640:480 out.mp4
+
+获取视频时长及属性
+ffprobe -loglevel quiet -print_format json -show_format -show_streams -i "e:\test\02 日落.mp4"
+
+
+
+ffmpeg 命令行实现多路视频拼接播放
+ffmpeg -i out1.mp4 -i out2.mp4 -i out3.mp4 -i out4.mp4 -filter_complex "[0:v]pad=iw*2:ih*2[a];[a][1:v]overlay=w[b];[b][2:v]overlay=0:h[c];[c][3:v]overlay=w:h" out.mp4
+
+live555 mediaserver  支持的流媒体格式
+        ".264" => a H.264 Video Elementary Stream file
+        ".265" => a H.265 Video Elementary Stream file
+        ".aac" => an AAC Audio (ADTS format) file
+        ".ac3" => an AC-3 Audio file
+        ".amr" => an AMR Audio file
+        ".dv" => a DV Video file
+        ".m4e" => a MPEG-4 Video Elementary Stream file
+        ".mkv" => a Matroska audio+video+(optional)subtitles file
+        ".mp3" => a MPEG-1 or 2 Audio file
+        ".mpg" => a MPEG-1 or 2 Program Stream (audio+video) file
+        ".ogg" or ".ogv" or ".opus" => an Ogg audio and/or video file
+        ".ts" => a MPEG Transport Stream file
+                (a ".tsx" index file - if present - provides server 'trick play' support)
+        ".vob" => a VOB (MPEG-2 video with AC-3 audio) file
+        ".wav" => a WAV Audio file
+        ".webm" => a WebM audio(Vorbis)+video(VP8) file
+
+
+ffmpeg -f lavfi -i rgbtestsrc -pix_fmt yuv420p -f sdl Example		
+
+ffmpeg 增加文字logo
+ ffmpeg -i "d:/workspace/cloud.mkv" -vf " drawtext=fontsize=100:fontfile=Dengxian.ttf:text='hello world':fontcolor=green"  -y "d:/workspace/cloud2.mkv"
+ 
+ffmpeg -re -i  "e:/back/spy.mp4" -vf " drawtext=fontsize=100:fontfile=Dengxian.ttf:text='%{localtime\:%Y-%m-%d %H-%M-%S }':fontcolor=green"  -y "e:/back/spy2.mp4"
+
+
